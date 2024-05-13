@@ -1,0 +1,14 @@
+{
+    "cSpell.words": [
+        "gorm",
+        "Outbounds"
+    ],
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "database": "${workspaceFolder:data_quality}/backend/src/test.db",
+            "name": "test data"
+        }
+    ]
+}
