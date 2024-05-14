@@ -21,10 +21,10 @@ type Application struct {
 	Logger         *slog.Logger
 	DB             *gorm.DB
 	Api            *fiber.App
-	ScheduleWorker entities.ScheduleWorker
+	ScheduleWorker *entities.ScheduleWorker
 }
 
-func NewApplication(ctx context.Context, logger *slog.Logger, db *gorm.DB, scheduleWorker entities.ScheduleWorker) *Application {
+func NewApplication(ctx context.Context, logger *slog.Logger, db *gorm.DB, scheduleWorker *entities.ScheduleWorker) *Application {
 	return &Application{
 		Context:        ctx,
 		Logger:         logger,

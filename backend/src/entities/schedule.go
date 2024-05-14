@@ -10,6 +10,6 @@ type SchedulingConfig struct {
 }
 
 type ScheduleWorker struct {
-	doneChan chan bool
-	dataChan chan ProfileCommand
+	DoneChan chan bool
+	DataChan chan ProfileCommand
 }

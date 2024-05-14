@@ -63,3 +63,16 @@ type MetricInstance struct {
 func (m MetricInstance) GetIdentifier(db *gorm.DB) string {
 	return fmt.Sprintf("%s_%s__%s", m.DatabaseOnboarding.DBType, m.TableName, m.Metric.GetIdentifier(db))
 }
+
+func GetAllNonRegisteredMetricInstances(db *gorm.DB, result *[]MetricInstance) {
+	db.
+		Debug().
+		// Important to Preload data about metric and database
+		// This can break the model logic for scheduling
+		Preload("DatabaseOnboarding").
+		Preload("Metric").
+		// Looking for jobs not scheduled
+		Model(&MetricInstance{}).
+		Where("schedule_job_id IS NULL").
+		Find(&result)
+}

@@ -1,6 +1,7 @@
 {
     "cSpell.words": [
         "gorm",
+        "idempotently",
         "Outbounds"
     ],
     "sqltools.connections": [
@@ -10,5 +11,21 @@
             "database": "${workspaceFolder:data_quality}/backend/src/test.db",
             "name": "test data"
         }
-    ]
+    ],
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "Golang Launch Package",
+                "type": "go",
+                "request": "launch",
+                "mode": "auto",
+                "program": "${fileDirname}",
+                "console": "integratedTerminal"
+            }
+
+        ],
+        "compounds": []
+    },
+
 }

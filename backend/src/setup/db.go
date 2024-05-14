@@ -18,7 +18,8 @@ func SetupDatabase(logger *slog.Logger) *gorm.DB {
 	// Capture database configuration
 	conn := viper.GetString("database.connection_string")
 	if strings.Trim(conn, " ") == "" {
-		panic("unable to read connection string")
+		logger.Error("unable to read connection string")
+		return nil
 	}
 
 	// Connect to database
@@ -37,7 +38,8 @@ func SetupDatabase(logger *slog.Logger) *gorm.DB {
 	}
 
 	if errConnection != nil {
-		panic("failed to connect database")
+		logger.Error("failed to connect database", slog.String("err", errConnection.Error()))
+		return nil
 	}
 
 	// Migrate the schema

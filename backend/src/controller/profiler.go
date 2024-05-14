@@ -5,130 +5,17 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
-	"time"
+	"sync"
 
 	"github.com/copito/data_quality/src/constants"
 	"github.com/copito/data_quality/src/entities"
 	"github.com/copito/data_quality/src/gateway"
 	"github.com/copito/data_quality/src/model"
-	"github.com/go-co-op/gocron/v2"
 	"github.com/spf13/viper"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
-
-func CreateProfilerWorker(ctx context.Context, db *gorm.DB, doneChan chan bool, dataChan chan entities.ProfileCommand) {
-	logger := ctx.Value("logger").(*slog.Logger)
-
-	// create a scheduler
-	s, err := gocron.NewScheduler()
-	// s, err := gocron.NewScheduler()
-	if err != nil {
-		// handle error
-		panic("Unable to start Profiler Worker")
-	}
-
-	// Start running scheduler
-	s.Start()
-
-readChannel:
-	for {
-		select {
-		case <-doneChan:
-			logger.Info("Closing down CRON...")
-			break readChannel
-
-		case event := <-dataChan:
-
-			switch event.EventName {
-			case constants.CREATE_METRIC_INSTANCE:
-				// This will be the information MetricInstance that was just created
-				// TODO: profiler task
-				logger.Info("received event", slog.Any("event", event))
-
-				if event.Payload.ScheduleGateway != constants.GOCRON {
-					logger.Warn("scheduling only implemented for gocron", "implemented", false)
-					break
-				}
-
-				eventKey := fmt.Sprintf("%v.%v.%v", event.EventName, event.Payload.Metric.MetricLevel, event.Payload.Metric.Name)
-
-				var job gocron.Job
-				err = db.Transaction(func(tx *gorm.DB) error {
-					// add a job to the scheduler
-					job, err := s.NewJob(
-						gocron.CronJob(event.Payload.CronSchedule, true), // schedule (from payload)
-						gocron.NewTask(CreateProfilerTask, ctx, eventKey, event.Payload),
-						gocron.WithTags("profiler"),              // add tags
-						gocron.WithName(string(event.EventName)), // provide name
-						// gocron.JobOption(gocron.WithStartImmediately()), // start profiler just now
-					)
-					// Check if the new job can be created successfully
-					if err != nil {
-						// handle error
-						logger.Error(
-							"unable to create new job",
-							slog.String("event_name", string(event.EventName)),
-							slog.String("combined", eventKey),
-							slog.String("err", err.Error()),
-						)
-						return err
-					}
-					// each job has a unique id
-					logger.Info(
-						"job has been created",
-						slog.String("event_name", string(event.EventName)),
-						slog.String("combined", eventKey),
-						slog.String("id", job.ID().String()),
-					)
-
-					// Update cron job id
-					err = tx.Debug().Model(&model.MetricInstance{}).Where("id = ?", event.Payload.ID).Update("schedule_job_id", job.ID().String()).Error
-					if err != nil {
-						return err
-					}
-
-					return nil
-				})
-				// Transaction failed and rolled back push to database
-				// Must clean up scheduler
-				if err != nil {
-					s.RemoveJob(job.ID())
-				}
-
-			case constants.DELETE_METRIC_INSTANCE:
-				// s.RemoveJob("uuid")
-				logger.Info("deleting metric_instance from cron", "implemented", false)
-
-			case constants.UPDATE_METRIC_INSTANCE:
-				// s.Update(
-				// 	"uuid",
-				// 	gocron.CronJob(event.Scheduling.CronScheduleInSeconds, true), // schedule (from payload),
-				// 	gocron.NewTask(CreateProfilerTask, "taskid", "hello", event.Payload),
-				// 	gocron.WithTags("profiler"),              // add tags
-				// 	gocron.WithName(string(event.EventName)), // provide name
-				// 	// gocron.JobOption(gocron.WithStartImmediately()), // start profiler just now
-				// )
-				logger.Info("updating metric_instance from cron", "implemented", false)
-
-			default:
-			}
-		// DEBUG: Remove this one after debug
-		case <-time.After(5 * time.Minute):
-			// debugging purposes
-			fmt.Println("Timeout reached - closing down scheduler")
-			break readChannel
-		}
-	}
-
-	// when you're done, shut it down
-	err = s.Shutdown()
-	if err != nil {
-		// handle error
-		fmt.Println(err)
-	}
-}
 
 func gormDatabaseToSQLDatabase(logger *slog.Logger, db *gorm.DB, errConnection error) *sql.DB {
 	// Check connection
@@ -146,7 +33,7 @@ func gormDatabaseToSQLDatabase(logger *slog.Logger, db *gorm.DB, errConnection e
 	return dd
 }
 
-func ScanRows(list *sql.Rows) (rows []map[string]interface{}) {
+func scanRows(list *sql.Rows) (rows []map[string]interface{}) {
 	fields, _ := list.Columns()
 	for list.Next() {
 		scans := make([]interface{}, len(fields))
@@ -168,9 +55,9 @@ func ScanRows(list *sql.Rows) (rows []map[string]interface{}) {
 	return rows
 }
 
-func CreateProfilerTaskExample(ctx context.Context, eventKey string, payload int) {
-	fmt.Printf("TEST EXAMPLE (%v) - time: %v\n", payload, time.Now().Format("2006-01-02 03:04:05"))
-}
+// func CreateExampleTask(ctx context.Context, eventKey string, payload int) {
+// 	fmt.Printf("TEST EXAMPLE (%v) - time: %v\n", payload, time.Now().Format("2006-01-02 03:04:05"))
+// }
 
 func CreateProfilerTask(ctx context.Context, eventKey string, payload model.MetricInstance) {
 	logger := ctx.Value("logger").(*slog.Logger)
@@ -231,8 +118,6 @@ func CreateProfilerTask(ctx context.Context, eventKey string, payload model.Metr
 	}
 
 	// TODO: Render query (calculated_template)
-	var query string
-
 	// TODO: Template
 	templatedCalculation := payload.Metric.TemplatedCalculation
 	logger.Info(
@@ -242,6 +127,7 @@ func CreateProfilerTask(ctx context.Context, eventKey string, payload model.Metr
 		slog.String("metric_name", payload.Metric.Name),
 	)
 
+	var query string
 	if payload.Metric.IsTemplated {
 		// TODO: pass more than database metadata, pass value too
 		// Use payload.Params - use to template
@@ -260,11 +146,51 @@ func CreateProfilerTask(ctx context.Context, eventKey string, payload model.Metr
 	}
 
 	defer rows.Close()
-	profileResult := ScanRows(rows)
+	profileResult := scanRows(rows)
 	logger.Info("profile result", slog.Any("result", profileResult))
 	// First column is always the output for the profile result (named value column)
 
 	// // TODO: send data to kafka
 	// // Send data to kafka
 	gateway.PublishResultToKafka(ctx, profileResult)
+}
+
+func UpdateJobsBasedOnDatabase(ctx context.Context, db *gorm.DB, sw *entities.ScheduleWorker) {
+	logger := ctx.Value("logger").(*slog.Logger)
+
+	logger.Info("Starting to updated jobs based on Database")
+
+	var wg sync.WaitGroup
+	wg.Add(3) // Add, Update, Delete (3)
+
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+		// TODO: Look through metric_instances on the database
+		var addMetricInstances []model.MetricInstance
+		model.GetAllNonRegisteredMetricInstances(db, &addMetricInstances)
+
+		// TODO: Add any missing
+		for _, addRequired := range addMetricInstances {
+			command := entities.ProfileCommand{
+				Logger:    logger,
+				Db:        db,
+				EventName: constants.EVENT_CREATE_METRIC_INSTANCE,
+				Payload:   addRequired,
+			}
+
+			sw.DataChan <- command
+		}
+	}(&wg)
+
+	// TODO: Update changed
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+	}(&wg)
+
+	// TODO: Delete not used
+	go func(wg *sync.WaitGroup) {
+		defer wg.Done()
+	}(&wg)
+
+	wg.Wait()
 }

@@ -13,7 +13,7 @@ database:
 
 # Setting up api configurations
 backend:
-  port: ":3000"
+  port: ":3001"
 
 
 timeseries_db:
