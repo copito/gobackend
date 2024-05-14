@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/copito/data_quality/src/entities"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
@@ -15,14 +16,16 @@ type Handlers struct {
 	Logger  *slog.Logger
 	DB      *gorm.DB
 	Api     *fiber.App
+	SW      *entities.ScheduleWorker
 }
 
-func NewHandlers(ctx context.Context, logger *slog.Logger, app *fiber.App, db *gorm.DB) *Handlers {
+func NewHandlers(ctx context.Context, logger *slog.Logger, app *fiber.App, db *gorm.DB, sw *entities.ScheduleWorker) *Handlers {
 	return &Handlers{
 		Context: ctx,
 		Logger:  logger,
 		Api:     app,
 		DB:      db,
+		SW:      sw,
 	}
 }
 
@@ -50,9 +53,9 @@ func (h *Handlers) LoadEndpoints() *fiber.App {
 	apiV1.Post("/metrics/", h.CreateMetric)
 	apiV1.Get("/metrics/:id", h.GetMetricByID)
 
-	apiV1.Get("/metrics/:metric_id/instance/", h.GetMetricInstances)
-	apiV1.Post("/metrics/:metric_id/instance/", h.CreateMetricInstanceByID)
-	apiV1.Get("/metrics/:metric_id/instance/:id/", h.GetMetricInstanceByID)
+	apiV1.Get("/metric_instances/", h.GetMetricInstances)
+	apiV1.Post("/metric_instances/", h.CreateMetricInstanceByID)
+	apiV1.Get("/metric_instances/:id/", h.GetMetricInstanceByID)
 
 	return h.Api
 }

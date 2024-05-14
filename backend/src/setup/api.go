@@ -55,7 +55,7 @@ func (a *Application) SetupRoutes() *Application {
 	a.Logger.Info("Setting Up API Routes...")
 
 	// Build controller
-	cc := handlers.NewHandlers(a.Context, a.Logger, a.Api, a.DB)
+	cc := handlers.NewHandlers(a.Context, a.Logger, a.Api, a.DB, a.ScheduleWorker)
 	cc.LoadEndpoints()
 
 	return a

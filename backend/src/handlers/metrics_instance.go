@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"github.com/copito/data_quality/src/constants"
+	"github.com/copito/data_quality/src/entities"
 	"github.com/copito/data_quality/src/model"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -65,9 +67,15 @@ func (cc *Handlers) CreateMetricInstanceByID(c *fiber.Ctx) error {
 			return queryResults
 		}
 
-		// TODO: Generate CRON schedule
 		// Create schedule
+		command := entities.ProfileCommand{
+			Logger:    cc.Logger,
+			Db:        cc.DB,
+			EventName: constants.EVENT_CREATE_METRIC_INSTANCE,
+			Payload:   payload,
+		}
 
+		cc.SW.DataChan <- command
 		return nil
 	})
 	// If rollback happened
@@ -78,5 +86,5 @@ func (cc *Handlers) CreateMetricInstanceByID(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.Status(200).JSON(&payload)
+	return c.Status(201).JSON(&payload)
 }
