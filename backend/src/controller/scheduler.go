@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
-	"time"
 
 	"github.com/copito/data_quality/src/constants"
 	"github.com/copito/data_quality/src/entities"
@@ -87,7 +86,7 @@ readChannel:
 				jobDefinition := determineCron(event.Payload.CronSchedule)
 
 				// Error handled idempotently (self-clean up)
-				db.Transaction(func(tx *gorm.DB) error {
+				err = db.Transaction(func(tx *gorm.DB) error {
 					// add a job to the scheduler
 					job, err := s.NewJob(
 						jobDefinition, // -> gocron.CronJob(event.Payload.CronSchedule, false),
@@ -127,6 +126,10 @@ readChannel:
 
 					return nil
 				})
+				// If rollback occurs logging what was the cause
+				if err != nil {
+					logger.Error("rolledback metric instance creation", slog.String("err", err.Error()))
+				}
 
 			case constants.EVENT_DELETE_METRIC_INSTANCE:
 				logger.Info("deleting metric_instance from cron", "implemented", false)
@@ -159,11 +162,11 @@ readChannel:
 
 			default:
 			}
-		// DEBUG: Remove this one after debug
-		case <-time.After(5 * time.Minute):
-			// debugging purposes
-			fmt.Println("Timeout reached - closing down scheduler")
-			break readChannel
+			// DEBUG: Add this one after debug
+			// case <-time.After(5 * time.Minute):
+			// 	// debugging purposes
+			// 	fmt.Println("Timeout reached - closing down scheduler")
+			// 	break readChannel
 		}
 	}
 

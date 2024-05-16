@@ -5,11 +5,11 @@
 	"dockerComposeFile": "docker-compose.yml",
 	"service": "app",
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-	"features": {
-		"ghcr.io/devcontainers-contrib/features/act-asdf:2": {},
-		"ghcr.io/devcontainers-contrib/features/grpcurl-asdf:2": {},
-		"ghcr.io/devcontainers-contrib/features/postgres-asdf:1": {}
-	},
+	// "features": {
+	// 	"ghcr.io/devcontainers-contrib/features/act-asdf:2": {},
+	// 	"ghcr.io/devcontainers-contrib/features/grpcurl-asdf:2": {},
+	// 	"ghcr.io/devcontainers-contrib/features/postgres-asdf:1": {}
+	// },
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
@@ -18,7 +18,14 @@
 	// "customizations": {},
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	"forwardPorts": ["5432:5432", 8086, 9092, 29092],
+	"forwardPorts": ["db:5432", "timeseries:8086", "redpanda:9092", "redpanda:29092", "redpandaconsole:8080"],
+	"portsAttributes": {
+		"8086": {"label": "Influxdb"},
+		"29092": {"label": "Kafka Redpanda"},
+		"9092": {"label": "Kafka Redpanda"},
+		"8080": {"label": "Kafka Redpanda Console"},
+		"5432": {"label": "Database Postgress"}
+	},
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	"postCreateCommand": "go version",

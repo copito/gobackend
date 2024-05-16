@@ -6,13 +6,19 @@ import (
 	"github.com/copito/data_quality/src/model"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/adhocore/gronx"
 )
 
 func (cc *Handlers) GetMetricInstances(c *fiber.Ctx) error {
 	var results []model.MetricInstance
-	queryResults := cc.DB.Find(&results)
+	queryResults := cc.DB.Debug().
+		// Preload all dependencies
+		// Preload("DatabaseOnboarding").
+		// Preload("Metric").
+		Preload(clause.Associations).
+		Find(&results)
 
 	if queryResults.Error != nil {
 		return c.Status(400).JSON(&fiber.Map{
@@ -32,7 +38,12 @@ func (cc *Handlers) GetMetricInstanceByID(c *fiber.Ctx) error {
 	}
 
 	var result model.MetricInstance
-	queryResults := cc.DB.First(&result, id)
+	queryResults := cc.DB.Debug().
+		// Joins required for all associations
+		// Joins("DatabaseOnboarding").
+		// Joins("Metric").
+		Preload(clause.Associations).
+		First(&result, id)
 
 	if queryResults.Error != nil {
 		return c.Status(400).JSON(&fiber.Map{
@@ -43,8 +54,8 @@ func (cc *Handlers) GetMetricInstanceByID(c *fiber.Ctx) error {
 	return c.Status(200).JSON(&result)
 }
 
-// CreateMetricInstanceByID
-func (cc *Handlers) CreateMetricInstanceByID(c *fiber.Ctx) error {
+// CreateMetricInstance
+func (cc *Handlers) CreateMetricInstance(c *fiber.Ctx) error {
 	payload := model.MetricInstance{}
 
 	if err := c.BodyParser(&payload); err != nil {

@@ -212,8 +212,13 @@ func LoadInitialMetricsInstance(logger *slog.Logger, db *gorm.DB) {
 		return
 	}
 
+	defaultDB := viper.Get("database.type")
+	if defaultDB == "" {
+		panic("database type not provided in configs: database.type")
+	}
+
 	var dbResult model.DatabaseOnboarding
-	db.Debug().Model(&model.DatabaseOnboarding{}).Where("db_type = ?", constants.SQLITE).Find(&dbResult)
+	db.Debug().Model(&model.DatabaseOnboarding{}).Where("db_type = ?", defaultDB).Find(&dbResult)
 
 	var metricRowCountResult model.Metric
 	db.Debug().Model(&model.Metric{}).Where("name = ?", "row_count").Find(&metricRowCountResult)
@@ -221,9 +226,12 @@ func LoadInitialMetricsInstance(logger *slog.Logger, db *gorm.DB) {
 	var metricValueMatchRegexResult model.Metric
 	db.Debug().Model(&model.Metric{}).Where("name = ?", "value_match_regex").Find(&metricValueMatchRegexResult)
 
+	dbName := "postgres"
+	dbSchama := "public"
 	result := db.Debug().Create(&model.MetricInstance{
 		DatabaseOnboardingID: dbResult.ID,
-		SchemaName:           nil,
+		DatabaseName:         &dbName,
+		SchemaName:           &dbSchama,
 		TableName:            "metrics",
 		Columns:              nil,
 		MetricID:             metricRowCountResult.ID,
@@ -239,7 +247,8 @@ func LoadInitialMetricsInstance(logger *slog.Logger, db *gorm.DB) {
 
 	result2 := db.Debug().Create(&model.MetricInstance{
 		DatabaseOnboardingID: dbResult.ID,
-		SchemaName:           nil,
+		DatabaseName:         &dbName,
+		SchemaName:           &dbSchama,
 		TableName:            "metrics",
 		Columns:              nil,
 		MetricID:             metricValueMatchRegexResult.ID,

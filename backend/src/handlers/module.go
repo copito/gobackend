@@ -39,6 +39,7 @@ func (h *Handlers) LoadEndpoints() *fiber.App {
 	})
 
 	h.Api.Get("/health/", h.HealthCheck)
+	h.Api.Get("/whoami/", h.Whoami)
 	h.Api.Get("/stack/", h.Stack)
 	h.Api.Get("/monitor/", monitor.New(monitor.Config{Title: "Metrics Page"}))
 
@@ -54,7 +55,7 @@ func (h *Handlers) LoadEndpoints() *fiber.App {
 	apiV1.Get("/metrics/:id", h.GetMetricByID)
 
 	apiV1.Get("/metric_instances/", h.GetMetricInstances)
-	apiV1.Post("/metric_instances/", h.CreateMetricInstanceByID)
+	apiV1.Post("/metric_instances/", h.CreateMetricInstance)
 	apiV1.Get("/metric_instances/:id/", h.GetMetricInstanceByID)
 
 	return h.Api

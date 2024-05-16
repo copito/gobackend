@@ -42,11 +42,12 @@ type MetricInstance struct {
 	// Database
 	// DatabaseOnboardingID uuid.UUID          `gorm:"column:database_onboarding_id"`
 	DatabaseOnboardingID uint               `gorm:"column:database_onboarding_id" json:"database_onboarding_id"`
-	DatabaseOnboarding   DatabaseOnboarding `gorm:"foreignKey:DatabaseOnboardingID"`
+	DatabaseOnboarding   DatabaseOnboarding `gorm:"foreignKey:DatabaseOnboardingID" json:"database_onboarding"`
 
-	SchemaName *string `gorm:"column:schema_name" json:"schema_name"`
-	TableName  string  `gorm:"column:table_name;not null" json:"table_name"`
-	Columns    *string `gorm:"column:columns" json:"columns"` // Serialized string representing columns (e.g., JSON)
+	DatabaseName *string `gorm:"column:database_name" json:"database_name"`
+	SchemaName   *string `gorm:"column:schema_name" json:"schema_name"`
+	TableName    string  `gorm:"column:table_name;not null" json:"table_name"`
+	Columns      *string `gorm:"column:columns" json:"columns"` // Serialized string representing columns (e.g., JSON)
 
 	// Params to be passed to templated query
 	// Params *string `gorm:"column:params" json:"params"` // JSON -> {'param1': "value1", etc} map[string]string
@@ -54,7 +55,7 @@ type MetricInstance struct {
 	// Metric
 	// MetricID uuid.UUID `gorm:"column:metric_id"`
 	MetricID uint   `gorm:"column:metric_id" json:"metric_id"`
-	Metric   Metric `gorm:"foreignKey:MetricID"`
+	Metric   Metric `gorm:"foreignKey:MetricID" json:"metric"`
 
 	// BaseSchedule
 	BaseSchedule

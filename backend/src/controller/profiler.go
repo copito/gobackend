@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -62,6 +63,18 @@ func scanRows(list *sql.Rows) (rows []map[string]interface{}) {
 func CreateProfilerTask(ctx context.Context, eventKey string, payload model.MetricInstance) {
 	logger := ctx.Value("logger").(*slog.Logger)
 
+	// try-catch
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			err, ok := r.(error)
+			if !ok {
+				logger.Error("CreateProfilerTask failed to return a proper error", slog.Any("err", r))
+			}
+			logger.Error("CreateProfilerTask failed - recovery call", slog.String("err", err.Error()))
+		}
+	}()
+
 	// Preloaded Metric & DatabaseOnboarding
 	// parse metric_instance data
 	logger.Info(
@@ -105,6 +118,7 @@ func CreateProfilerTask(ctx context.Context, eventKey string, payload model.Metr
 	case string(constants.SNOWFLAKE):
 		// import _ "github.com/snowflakedb/gosnowflake"
 		// "user:password@my_organization-my_account/mydb"
+		// snowflake://{user}:{password}@{account_identifier}/
 		db, errConnection = sql.Open("snowflake", conn)
 		defer db.Close()
 		if errConnection != nil {
@@ -115,6 +129,13 @@ func CreateProfilerTask(ctx context.Context, eventKey string, payload model.Metr
 		dd, errConnection = gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 		db = gormDatabaseToSQLDatabase(logger, dd, errConnection)
 		defer db.Close()
+	}
+
+	// Parse Host information based on connection string
+	hostname, err := payload.DatabaseOnboarding.GetHostName()
+	if err != nil {
+		logger.Error("error parsing hostname for connection string", slog.String("err", err.Error()))
+		return
 	}
 
 	// TODO: Render query (calculated_template)
@@ -142,17 +163,51 @@ func CreateProfilerTask(ctx context.Context, eventKey string, payload model.Metr
 	rows, err := db.Query(query)
 	if err != nil {
 		logger.Error("error running profiler query", slog.String("truncated_query", query[:200]))
-		panic("error running profiler query")
+		return
 	}
 
 	defer rows.Close()
-	profileResult := scanRows(rows)
-	logger.Info("profile result", slog.Any("result", profileResult))
+	profileResults := scanRows(rows)
+	logger.Info("profile result", slog.Any("result", profileResults))
 	// First column is always the output for the profile result (named value column)
 
-	// // TODO: send data to kafka
-	// // Send data to kafka
-	gateway.PublishResultToKafka(ctx, profileResult)
+	// Prepare message to send to Kafka
+	if len(profileResults) == 0 {
+		logger.Error("no result from profiling result")
+		return
+	}
+
+	profileResult := profileResults[0]
+	valueOutput, ok := profileResult["value"] // assumes result are in the value column
+	if !ok {
+		logger.Error("no result from profiling result", slog.Any("profile_results", profileResults))
+		return
+	}
+	valueOutputString := fmt.Sprintf("%v", valueOutput)
+
+	kafkaMessageOutput := entities.ProfileEvent{
+		Metric:         payload.Metric.Name,
+		Level:          payload.Metric.MetricLevel,
+		IsCustom:       payload.Metric.IsCustom,
+		IsStandard:     payload.Metric.IsStandard,
+		IsTemplated:    payload.Metric.IsTemplated,
+		DatabaseType:   payload.DatabaseOnboarding.DBType,
+		DatabaseHost:   hostname,
+		DatabaseName:   *payload.DatabaseName,
+		DatabaseSchema: *payload.SchemaName,
+		DatabaseTable:  payload.TableName,
+		Payload:        valueOutput,
+		PayloadMarshal: valueOutputString,
+		Tenancy:        constants.TENANCY_DEV,
+	}
+	value, err := json.Marshal(kafkaMessageOutput)
+	if err != nil {
+		panic(err)
+	}
+
+	// Send data to kafka
+	topic := viper.GetString("kafka.profile_metric_topic")
+	gateway.PublishResultToKafka(ctx, topic, eventKey, string(value))
 }
 
 func UpdateJobsBasedOnDatabase(ctx context.Context, db *gorm.DB, sw *entities.ScheduleWorker) {

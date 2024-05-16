@@ -2,35 +2,36 @@ global:
   version: "0.10.1"
   author: "Copito"
 
-
 # Setting up api database connection
 database:
-  type: sqlite
-  connection_string: "test.db"
-  # type: postgres
-  # connection_string: "host=localhost user=postgres password=postgres dbname=postgres port=9920 sslmode=disable TimeZone=America/Chicago"
+  # type: sqlite
+  # connection_string: "test.db"
+  type: postgres
+  # connection_string: "host=db user=postgres password=postgres dbname=postgres port=5432 sslmode=disable TimeZone=America/Chicago"
+  connection_string: "postgres://postgres:postgres@db:5432/postgres?sslmode=disable"
 
 
 # Setting up api configurations
 backend:
   port: ":3001"
+  tenancy: "company/development"
 
 
 timeseries_db:
   username: admin
   password: admin
   token: F-QFQpmCL9UkR3qyoXnLkzWj03s6m4eCvYgDl1ePfHBf9ph7yxaSgQ6WN0i9giNgRTfONwVMK1f977r_g71oNQ==
-  url: "http://localhost:8086"
+  url: "timeseries:8086"
 
 
 # Setting up cadence product
 cadence:
-  host_port: "127.0.0.1:7933"
+  host_port: "cadence:7933"
   domain: "test-domain"
   client_name: "test-dq-worker"
   service: "cadence-frontend"
 
 # Setting up Kafka product
 kafka:
-  server: "localhost:9092"
+  server: "redpanda:9092"
   profile_metric_topic: "profile_metric"
