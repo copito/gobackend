@@ -5,12 +5,12 @@ go 1.22.2
 require (
 	github.com/adhocore/gronx v1.8.1
 	github.com/go-co-op/gocron/v2 v2.5.0
+	github.com/influxdata/influxdb-client-go/v2 v2.13.0
 	gorm.io/driver/sqlite v1.5.5
 )
 
 require (
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
-	github.com/influxdata/influxdb-client-go/v2 v2.13.0 // indirect
 	github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
@@ -22,6 +22,7 @@ require (
 	github.com/tinylib/msgp v1.1.8 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/net v0.22.0 // indirect
+	google.golang.org/grpc v1.64.0 // indirect
 )
 
 require (

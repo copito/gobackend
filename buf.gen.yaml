@@ -1,66 +1,43 @@
-# version: v1
-# plugins:
-
-#   - name: go
-#     out: idl-gen
-#     opt: 
-#       - paths=source_relative
-
-#   - name: go-grpc
-#     out: idl-gen
-#     opt: 
-#       - paths=source_relative
-
-#   - name: grpc-gateway
-#     out: idl-gen
-#     opt: 
-#       - paths=source_relative
-
-  # - name: openapi
-  #   out: openapi
-  #   opt:
-  #     - paths=source_relative
-  #     - generate_unbound_methods=true
-
 version: v2
 managed:
   enabled: true
   override:
     - file_option: go_package_prefix
-      value: github.com/bufbuild/buf-tour/gen
+      value: github.com/copito/idl-gen/go/
   
   # Remove `disable` field if googleapis is not used
   disable:
     - module: buf.build/googleapis/googleapis
       file_option: go_package_prefix
+
 plugins:
   # Protocol buffer
   - remote: buf.build/protocolbuffers/go:v1.28.1
-    out: idl-gen/go
+    out: services/idl-gen/go
     opt: paths=source_relative
   
   # Use the latest version of grpc
   - remote: buf.build/grpc/go
-    out: idl-gen/go
+    out: services/idl-gen/go
     opt: paths=source_relative
 
   # Use the latest version of connect-rpc
   - remote: buf.build/connectrpc/go
-    out: idl-gen/go
+    out: services/idl-gen/go
     opt: paths=source_relative
 
   # Use the latest version of grpc-ecosystem/gateway 
   # (https://buf.build/grpc-ecosystem/gateway?version=v2.20.0)
   - remote: buf.build/grpc-ecosystem/gateway:v2.20.0
-    out: idl-gen/go
+    out: services/idl-gen/go
     opt:
       - paths=source_relative
       # - grpc_api_configuration=path/to/config.yaml
       # - standalone=true
 
-  # Openapi generation
+  # OPENAPI generation
   - remote: buf.build/grpc-ecosystem/openapiv2:v2.20.0
-    out: idl-gen/go
+    out: openapi/
   
   # # Validation logic
   # - remote: buf.build/bufbuild/validate-go:v1.0.4
@@ -72,4 +49,4 @@ plugins:
 #   - buf.build/googleapis/googleapis
 
 inputs:
-  - directory: idl/grpc/
+  - directory: idl/proto/

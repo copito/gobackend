@@ -3,8 +3,9 @@ PROTOC_GEN_GO_GRPC := protoc-gen-go-grpc
 PROTOC_GEN_GRPC_GATEWAY := protoc-gen-grpc-gateway
 
 # point to proto files outside service
-PROTO_DIR := idl/grpc
-OUT_DIR := idl-gen
+PROTO_DIR := idl/proto
+OPENAPI_DIR := openapi
+OUT_DIR := services/idl-gen
 
 # find all proto files
 PROTO_FILES := $(shell find $(PROTO_DIR) -name '*.proto')
@@ -28,6 +29,7 @@ proto:
 
 clean_proto:
 	rm -rf $(OUT_DIR)/*
+	rm -rf $(OPENAPI_DIR)/*
 
 install_proto:
 	go install \

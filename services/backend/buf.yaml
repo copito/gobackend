@@ -1,6 +1,6 @@
 version: v2
 modules:
-  - path: ./../../idl/grpc/
+  - path: ./../../idl/proto/backend
 lint:
   use:
     - DEFAULT

@@ -1,16 +1,5 @@
 BINARY_NAME=data_quality
 
-PROTOC_GEN_GO := protoc-gen-go
-PROTOC_GEN_GO_GRPC := protoc-gen-go-grpc
-PROTOC_GEN_GRPC_GATEWAY := protoc-gen-grpc-gateway
-
-# point to proto files outside service
-PROTO_DIR := ./../idl/grpc
-OUT_DIR := ./../idl-gen
-
-# find all proto files
-PROTO_FILES := $(shell find $(PROTO_DIR) -name '*.proto')
-
 build:
 	GOARCH=amd64 GOOS=darwin go build -o bin/${BINARY_NAME}-darwin src/main.go
 	GOARCH=amd64 GOOS=linux go build -o bin/${BINARY_NAME}-linux src/main.go
