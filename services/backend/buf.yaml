@@ -1,0 +1,9 @@
+version: v2
+modules:
+  - path: ./../../idl/grpc/
+lint:
+  use:
+    - DEFAULT
+breaking:
+  use:
+    - FILE

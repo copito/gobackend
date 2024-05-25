@@ -8,7 +8,7 @@
         {
             "previewLimit": 50,
             "driver": "SQLite",
-            "database": "${workspaceFolder:data_quality}/backend/src/test.db",
+            "database": "${workspaceFolder:data_quality}/services/backend/src/test.db",
             "name": "test data"
         }
     ],
@@ -20,12 +20,23 @@
                 "type": "go",
                 "request": "launch",
                 "mode": "auto",
-                "program": "${workspaceFolder}/backend/src/main.go",
+                "program": "${workspaceFolder}/services/backend/src/main.go",
                 "console": "integratedTerminal"
             }
 
         ],
         "compounds": []
     },
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "bazel-*": true,
+        "pkg*": true
+    },
+    "explorerExclude.backup": {},
 
 }

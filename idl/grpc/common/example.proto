@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package common;
+
+// Define the request message for SayHello
+message Example {
+    optional string name = 1;
+    optional bool is_example = 2;
+}

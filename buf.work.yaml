@@ -1,0 +1,4 @@
+version: v1
+directories:
+  - idl/grpc/backend
+  - idl/grpc/common
